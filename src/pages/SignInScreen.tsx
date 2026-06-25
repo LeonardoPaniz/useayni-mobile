@@ -1,6 +1,8 @@
 import { useState } from "react";
+import type { StackNavigationProp } from "@react-navigation/stack";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,13 +14,31 @@ import {
 } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 import { authService } from "../services/authService";
+import CheckBox from "expo-checkbox";
 
-export default function SignInScreen({ navigation }) {
+type AuthStackParamList = {
+  SignIn: undefined;
+  SignUp: undefined;
+  ForgotPassword: undefined;
+  Home: undefined;
+};
+
+type SignInScreenNavigationProp = StackNavigationProp<
+  AuthStackParamList,
+  "SignIn"
+>;
+
+type Props = {
+  navigation: SignInScreenNavigationProp;
+};
+
+export default function SignInScreen({ navigation }: Props) {
   const { setUser, setToken } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = async () => {
     setError("");
@@ -28,13 +48,15 @@ export default function SignInScreen({ navigation }) {
       const response = await authService.login({
         personalEmail: email,
         password,
+        rememberMe,
       });
       setUser(response.member);
       setToken(response.accessToken);
-    } catch (err) {
+    } catch (error) {
       const message =
-        err?.message ||
-        "Erro ao entrar. Verifique email e senha e tente novamente.";
+        error instanceof Error
+          ? error.message
+          : "Erro ao entrar. Verifique email e senha e tente novamente.";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -48,7 +70,15 @@ export default function SignInScreen({ navigation }) {
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <Text style={styles.brand}>Ayni</Text>
+        <Image
+          source={require("../../assets/icon.png")}
+          style={{
+            width: 440,
+            height: 80,
+            marginBottom: 60,
+            alignSelf: "center",
+          }}
+        />
         <Text style={styles.title}>Entrar</Text>
         <Text style={styles.subtitle}>
           Use suas credenciais para acessar a plataforma.
@@ -81,6 +111,11 @@ export default function SignInScreen({ navigation }) {
           />
         </View>
 
+        <View style={styles.checkbox}>
+          <CheckBox value={rememberMe} onValueChange={setRememberMe} />
+          <Text style={styles.labelCheckbox}>Lembrar-se de mim</Text>
+        </View>
+
         <Pressable
           style={styles.button}
           onPress={handleSubmit}
@@ -93,10 +128,27 @@ export default function SignInScreen({ navigation }) {
         </Pressable>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Ainda não tem conta?</Text>
-          <Pressable onPress={() => navigation.navigate("SignUp")}>
-            <Text style={styles.footerLink}>Cadastre-se</Text>
-          </Pressable>
+          <View
+            style={{
+              flexDirection: "column",
+              marginRight: 20,
+            }}>
+            <Text style={styles.footerText}>Ainda não tem conta?</Text>
+            <Pressable onPress={() => navigation.navigate("SignUp")}>
+              <Text style={styles.footerLink}>Cadastre-se</Text>
+            </Pressable>
+          </View>
+
+          <View
+            style={{
+              flexDirection: "column",
+              marginLeft: 20,
+            }}>
+            <Text style={styles.footerText}>Esqueceu sua senha?</Text>
+            <Pressable onPress={() => navigation.navigate("ForgotPassword")}>
+              <Text style={styles.footerLink}>Recuperar senha</Text>
+            </Pressable>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </ScrollView>
@@ -133,8 +185,17 @@ const styles = StyleSheet.create({
   field: {
     marginBottom: 16,
   },
+  checkbox: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 24,
+  },
   label: {
     marginBottom: 8,
+    fontSize: 14,
+    color: "#475569",
+  },
+  labelCheckbox: {
     fontSize: 14,
     color: "#475569",
   },
@@ -165,6 +226,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: 35,
   },
   footerText: {
     color: "#475569",

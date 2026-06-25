@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { StackNavigationProp } from "@react-navigation/stack";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,7 +13,23 @@ import {
 } from "react-native";
 import { authService } from "../services/authService";
 
-export default function SignUpScreen({ navigation }) {
+type AuthStackParamList = {
+  SignIn: undefined;
+  SignUp: undefined;
+  ForgotPassword: undefined;
+  Home: undefined;
+};
+
+type SignUpScreenNavigationProp = StackNavigationProp<
+  AuthStackParamList,
+  "SignUp"
+>;
+
+type Props = {
+  navigation: SignUpScreenNavigationProp;
+};
+
+export default function SignUpScreen({ navigation }: Props) {
   const [name, setName] = useState("");
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
@@ -72,10 +89,11 @@ export default function SignUpScreen({ navigation }) {
       setSuccess(
         "Cadastro enviado com sucesso! Aguarde a análise e faça login em seguida.",
       );
-    } catch (err) {
+    } catch (error) {
       const message =
-        err?.message ||
-        "Falha no cadastro. Verifique os dados e tente novamente.";
+        error instanceof Error
+          ? error.message
+          : "Falha no cadastro. Verifique os dados e tente novamente.";
       setError(message);
     } finally {
       setIsLoading(false);
